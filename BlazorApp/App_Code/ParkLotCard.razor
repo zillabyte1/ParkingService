@@ -1,0 +1,211 @@
+﻿@namespace BlazorApp
+@inherits ParkBaseDomControl
+
+@inject ParkingDataService svc
+
+<div class="card" style="max-width: 680px;">
+  <div class="card-body p-1">
+    <EditForm Model="@rec" OnValidSubmit="@HandleValidSubmit">
+      <DataAnnotationsValidator />
+      <ValidationSummary />
+
+      <div class="row m-2">
+        <div class="col" style="text-align: right;">
+          <label class="" for="LotKey">Lot: </label>
+        </div>
+        <div class="col-10"><InputText style="width: 90%" id="LotKey" @bind-Value="rec.LotKey" /></div>
+      </div>
+
+      <div class="row  m-2">
+        <div class="col" style="text-align: right;">
+          <label for="MaxSpaces">Spaces: </label>
+        </div>
+        <div class="col" style="text-align: left;">
+          <InputNumber id="MaxSpaces" style="width:98%;" @bind-Value="rec.MaxSpaces" />
+        </div>
+        <div class="col" style="text-align: left;">
+          <button class="btn btn-sm btn-info" @onclick="ActionSet"> <span class="oi oi-hard-drive" aria-hidden="true"></span> </button>
+        </div>
+        <div class="col" style="text-align: right;">
+          <label for="Occupied">Occupied: </label>
+        </div>
+        <div class="col" style="text-align: left;">
+          <InputNumber id="Occupied" style="width:98%;" @bind-Value="rec.Occupied" />
+        </div>
+        <div class="col">
+          <button class="btn btn-sm btn-warning" @onclick="ActionReset"> <span class="oi oi-action-undo" aria-hidden="true"></span> </button>
+        </div>
+
+      </div>
+
+      <div class="row m-1">
+        <div class="col"></div>
+        <div class="col-9">
+          <div class="row">
+
+            <div class="col-1" style="text-align: right;  margin: 0px; padding: 0px;">
+              <button class="btn btn-sm btn-danger" @onclick="ActionExit"> <span class="oi oi-arrow-thick-left" aria-hidden="true"></span> </button>
+            </div>
+            <div class="progress col" style="height: 30px;width: 100%;">
+              <div class="progress-bar" role="progressbar" style='height:30px;width:@rec.PercentFilled' aria-valuenow='@rec.Occupied.ToString()' aria-valuemin="0" aria-valuemax='@rec.MaxSpaces.ToString()'>@rec.PercentFilled</div>
+            </div>
+            <div class="col-1" style="margin: 0px; padding: 0px;">
+              <button class="btn btn-sm btn-success" @onclick="ActionEnter"> <span class="oi oi-arrow-thick-right" aria-hidden="true"></span> </button>
+            </div>
+
+          </div>
+        </div>
+        <div class="col"></div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <label for="LastUpdated">
+            <input @bind-value="@idKey"
+                   @bind-value:event="oninput" hidden="hidden" />
+          </label>
+        </div>
+        <div class="col-10">
+          <span class="text-muted" style="font-size: smaller"> Occupied: @rec.Occupied Available: @rec.Available Last Updated: @rec.LastUpdated.ToString() </span>
+          <div>@Message</div>
+        </div>
+      </div>
+
+    </EditForm>
+
+  </div>
+</div>
+
+<div class="@ClassMapper.Class" style="@Style" @attributes="Attributes" Id="@Id" @ref="Ref">
+  @ChildContent
+</div>
+
+@code {
+
+  [Parameter]
+  public RenderFragment ChildContent { get; set; }
+
+  [Parameter]
+  public bool Unbounded { get; set; }
+
+
+  //-- ON INTIALIZE
+  protected override async Task OnInitializedAsync()
+  {
+    await base.OnInitializedAsync();
+    ClassMapper.Add("mdc-card__primary-action");
+
+    //base.UserControlSubmit += OnUserControlSubmit;
+
+    //_idKey = rec.LotKey;
+
+  }
+
+  ParkingLot rec = new ParkingLot();
+
+  [Parameter]
+  public ParkingLot LotData
+  {
+    get { return rec; }
+    set
+    {
+      rec = value;
+      _idKey = rec.LotKey;
+    }
+  }
+
+
+  private string _idKey { get; set; }
+
+  [Parameter]
+  public string idKey
+  {
+    get { return _idKey; }
+    set
+    {
+      _idKey = value;
+      //RefreshDetail();
+    }
+  }
+
+  [Parameter]
+  public string Message { get; set; }
+
+  protected async void RefreshDetail() {
+    rec = await svc.GetLocation(idKey.ToString());
+    StateHasChanged();
+  }
+   
+  //public async Task TryRegister()
+  //void ActionExit()
+  async Task ActionExit() {
+    try {
+      rec.Occupied--;
+      rec.LastUpdated = DateTime.Now;
+      var rtn = await svc.AddAction(idKey.ToString(), "exit", -1);
+      OnUserControlSubmit("exit");
+    } catch (Exception e) {
+      Message = e.ToString();
+      //throw;
+    }
+  }
+
+  //void ActionEnter()
+  async Task ActionEnter()
+  {
+    try
+    {
+      rec.Occupied++;
+      rec.LastUpdated = DateTime.Now;
+      var rtn = await svc.AddAction(idKey.ToString(), "enter", 1);
+      OnUserControlSubmit("exit");
+    }
+    catch (Exception e)
+    {
+      Message = e.ToString();
+      //throw;
+    }
+  }
+
+  async Task ActionReset()
+  {
+    try
+    {
+      rec.Occupied = 0;
+      rec.LastUpdated = DateTime.Now;
+      var rtn = await svc.AddAction(idKey.ToString(), "reset", 0);
+    }
+    catch (Exception e)
+    {
+      Message = e.ToString();
+      //throw;
+    }
+  }
+
+  async Task ActionSet()
+  {
+    try
+    {
+      var newvalue = rec.MaxSpaces;
+      rec.LastUpdated = DateTime.Now;
+      var rtn = await svc.AddAction(idKey.ToString(), "set", newvalue);
+ 
+    }
+    catch (Exception e)
+    {
+      Message = e.ToString();
+      //throw;
+    }
+  }
+
+  private void HandleValidSubmit()
+  {
+    //Message = "Record Saved";
+
+    //Console.WriteLine("OnValidSubmit");
+  }
+
+
+
+
+}

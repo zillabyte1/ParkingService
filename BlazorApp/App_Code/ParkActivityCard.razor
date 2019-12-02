@@ -1,0 +1,180 @@
+﻿@namespace BlazorApp
+@inherits ParkBaseDomControl
+
+@inject ParkingDataService svc
+
+@if (dLots == null)
+{
+  <p><em>Loading...</em></p>
+}
+else
+{
+
+<div class="container" style="max-width: 640px;">
+  <div class="">
+
+      <div class="row m-1">
+        <div class="col" style="text-align: right;  margin: 0px; padding: 0px;">
+          <button class="btn btn-secondary h-100" @onclick="ActionMoveDown"> <span class="oi oi-arrow-thick-left" aria-hidden="true"></span> </button>
+        </div>
+        <div class="col-8">
+
+
+          <div class="card">
+            <div class="card-header">
+              <h2>@rec.LotKey (@rec.MaxSpaces) </h2>
+              <span class="text-muted"> Occupied: @rec.Occupied Available: @rec.Available Last Updated: @rec.LastUpdated.ToString() </span>
+            </div>
+            <div class="card-body">
+
+              <div class="row">
+                <div class="col">
+                  <img class="img-fluid img-thumbnail" src="images/working.png" alt="Image">
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col">
+                  <div class="progress col" style="height: 30px;width: 100%;">
+                    <div class="progress-bar" role="progressbar" style='height:30px;width:@rec.PercentFilled' aria-valuenow='@rec.Occupied.ToString()' aria-valuemin="0" aria-valuemax='@rec.MaxSpaces.ToString()'>@rec.PercentFilled</div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+        <div class="col" style="margin: 0px; padding: 0px;">
+          <button class="btn btn-secondary h-100" @onclick="ActionMoveUp"> <span class="oi oi-arrow-thick-right" aria-hidden="true"></span> </button>
+        </div>
+      </div>
+
+      <div class="row m-1">
+        <div class="col-1"></div>
+        <div class="col-5">
+          <button class="btn btn-sm btn-light" @onclick="ActionExit"> <img class="img-fluid img-thumbnail" src="images/exit.png" alt="Image"> </button>
+        </div>
+
+        <div class="col-5">
+          <button class="btn btn-sm btn-light" @onclick="ActionEnter"> <img class="img-fluid img-thumbnail" src="images/enter.png" alt="Image"> </button>
+        </div>
+        <div class="col-1"></div>
+      </div>
+
+  </div>
+   
+  <div class="@ClassMapper.Class" style="@Style" @attributes="Attributes" Id="@Id" @ref="Ref">
+    @ChildContent
+  </div>
+
+</div>
+
+}
+
+@code {
+
+[Parameter]
+  public RenderFragment ChildContent { get; set; }
+
+  [Parameter]
+  public bool Unbounded { get; set; }
+
+  IReadOnlyCollection<ParkingLot> dLots;
+  ParkingLot rec = new ParkingLot();
+  int currentIdx = 0;
+
+  void IncrementCount() {
+    currentIdx++;
+  }
+
+
+  //-- ON INTIALIZE
+  protected override async Task OnInitializedAsync() {
+    await base.OnInitializedAsync();
+    ClassMapper.Add("mdc-card__primary-action");
+
+    dLots = await svc.GetLocations();
+
+    rec = dLots.FirstOrDefault();
+  }
+
+  private void ViewData(ParkingLot obj) {
+    rec = obj;
+  }
+
+  [Parameter]
+  public ParkingLot LotData {
+    get { return rec; }
+    set {
+      rec = value;
+      _idKey = rec.LotKey;
+    }
+  }
+
+  private string _idKey { get; set; }
+
+  [Parameter]
+  public string idKey {
+    get { return _idKey; }
+    set {
+      _idKey = value;
+      //RefreshDetail();
+    }
+  }
+
+  void ActionMoveUp() {
+    try {
+      currentIdx++;
+      rec = dLots.ToList()[currentIdx];
+    } catch (Exception e) {
+      Message = e.ToString();
+      //throw;
+    }
+  }
+
+  void ActionMoveDown() {
+    try {
+      currentIdx--;
+      rec = dLots.ToList()[currentIdx];
+    } catch (Exception e) {
+      Message = e.ToString();
+      //throw;
+    }
+  }
+
+  async Task ActionExit() {
+    try {
+      rec.Occupied--;
+      rec.LastUpdated = DateTime.Now;
+      var rtn = await svc.AddAction(idKey.ToString(), "exit", -1);
+      OnUserControlSubmit("exit");
+    } catch (Exception e) {
+      Message = e.ToString();
+      //throw;
+    }
+  }
+
+  //void ActionEnter()
+  async Task ActionEnter() {
+    try {
+      rec.Occupied++;
+      rec.LastUpdated = DateTime.Now;
+      var rtn = await svc.AddAction(idKey.ToString(), "enter", 1);
+      OnUserControlSubmit("exit");
+    } catch (Exception e) {
+      Message = e.ToString();
+      //throw;
+    }
+  }
+
+  [Parameter]
+  public string Message { get; set; }
+
+  private void HandleValidSubmit() {
+    //Message = "Record Saved";
+    //Console.WriteLine("OnValidSubmit");
+  }
+
+  }
+

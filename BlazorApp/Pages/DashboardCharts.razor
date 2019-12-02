@@ -1,0 +1,45 @@
+﻿
+@inject ParkingDataService svc
+
+<div>@Message</div>
+
+@if (dLocations == null)
+{
+  <p><em>Loading...</em></p>
+}
+else
+{
+<div class="row">
+
+  @foreach (var rec in dLocations) {
+  <div>
+    <ParkLotChart @bind-ChartTitle="@rec.LotKey" @bind-MaxSpaces="@rec.MaxSpaces"  @bind-OccupiedSpaces="@rec.Occupied" @bind-ChartHeight="@chartHeight" @bind-ChartWidth="@chartWidth">
+    </ParkLotChart>
+  </div>
+  }
+
+</div>
+
+}
+
+@code {
+
+  //int chartHeight = 200;
+  //int chartWidth = 150;
+
+  int chartHeight = 267;
+  int chartWidth = 200;
+
+
+  IReadOnlyCollection<ParkingLot> dLots;
+  IList<ParkingLot> dLocations;
+
+  public string Message { get; set; }
+
+  protected override async Task OnInitializedAsync() {
+    
+    dLots = await svc.GetLocations();
+    dLocations = dLots.ToList();
+  }
+
+}

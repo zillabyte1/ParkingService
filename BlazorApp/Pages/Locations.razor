@@ -1,0 +1,84 @@
+﻿@page "/locations"
+
+@inject ParkingDataService svc
+
+<div>@Message</div>
+
+  
+
+@if (dLots == null)
+{
+  <p><em>Loading...</em></p>
+}
+else
+{
+  <div class="row" >
+    <div class="col-4" style="height:650px; overflow-y: scroll;">
+
+      <table class="table" >
+        <thead>
+          <tr>
+            <th>Lot</th>
+            <th>Spaces</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody >
+          @foreach (var rec in dLots) {
+            <tr>
+              <td>
+                @rec.LotKey  (@rec.MaxSpaces)
+                <span class="text-muted"> Occupied: @rec.Occupied Available: @rec.Available Last Updated: @rec.LastUpdated.ToString() </span>
+              </td>
+              <td>
+                <div class="progress">
+                  <div class="progress-bar" role="progressbar" style='width:@rec.PercentFilled' aria-valuenow='@rec.Occupied.ToString()' aria-valuemin="0" aria-valuemax='@rec.MaxSpaces.ToString()'>@rec.PercentFilled</div>
+                </div>
+              </td>
+              <td>
+                <button class="btn btn-primary" @onclick="(() => ViewData(rec))"> <span class="fa fa-fighter-jet"></span> Edit </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+    </div>
+    <div class="col-6">
+
+      <ParkLotCard @bind-LotData="@currentrec">
+      </ParkLotCard>
+
+    </div>
+  </div>
+
+}
+
+@code {
+
+  IReadOnlyCollection<ParkingLot> dLots;
+  ParkingLot currentrec = new ParkingLot();
+
+  private string _sKey = "";
+  public string sKey {
+    get {
+      if (_sKey == "") {
+        return "AUSTIN-01";
+      } else {
+        return _sKey;
+      }
+    }
+    set { _sKey = value; }
+  }
+
+  public string Message { get; set; }
+
+  protected override async Task OnInitializedAsync() {
+    dLots = await svc.GetLocations();
+  }
+
+  private void ViewData(ParkingLot obj) {
+    currentrec = obj;
+  }
+
+}

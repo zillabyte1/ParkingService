@@ -1,0 +1,12 @@
+﻿@namespace BlazorApp
+@inherits ParkBaseCard
+
+<div class="@ClassMapper.ToString()" style="@Style" @ref="Ref" @attributes="Attributes" Id="@Id">
+  @ChildContent
+</div>
+
+<h3>ParkLogCard</h3>
+
+@code {
+
+}

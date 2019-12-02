@@ -1,0 +1,48 @@
+﻿@page "/logs"
+
+@inject ParkingDataService svc
+
+<h1>Location Logs</h1>
+
+<p>Lot Activity</p>
+
+@if (dLogs == null)
+{
+<p><em>Loading...</em></p>
+}
+else
+{
+<table class="table">
+  <thead>
+    <tr>
+      <th>Lot</th>
+      <th>Spaces</th>
+      <th>Occupied</th>
+      <th>Available</th>
+      <th>Last Updated</th>
+    </tr>
+  </thead>
+  <tbody>
+    @foreach (var rec in dLogs)
+      {
+    <tr>
+      <td>@rec.LotKey</td>
+      <td>@rec.ActionType</td>
+      <td>@rec.ActionValue</td>
+      <td>@rec.LogId</td>
+      <td>@rec.DateCreated.ToString()</td>
+    </tr>
+      }
+  </tbody>
+</table>
+}
+
+@code {
+
+  IReadOnlyCollection<ParkingLog> dLogs;
+
+  protected override async Task OnInitializedAsync()
+  {
+    dLogs = await svc.GetLogs();
+  }
+}
